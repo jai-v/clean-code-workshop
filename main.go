@@ -2,57 +2,19 @@ package main
 
 import (
 	"clean-code-workshop/constants"
-	"crypto/sha1"
+	directoryOptions "clean-code-workshop/directory"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path"
 	"strconv"
-	"sync/atomic"
 )
-
-func traverseDir(hashes, duplicates map[string]string, dupeSize *int64, entries []os.FileInfo, directory string) {
-	for _, entry := range entries {
-		fullpath := (path.Join(directory, entry.Name()))
-
-		if !entry.Mode().IsDir() && !entry.Mode().IsRegular() {
-			continue
-		}
-
-		if entry.IsDir() {
-			dirFiles, err := ioutil.ReadDir(fullpath)
-			if err != nil {
-				panic(err)
-			}
-			traverseDir(hashes, duplicates, dupeSize, dirFiles, fullpath)
-			continue
-		}
-		file, err := ioutil.ReadFile(fullpath)
-		if err != nil {
-			panic(err)
-		}
-		hash := sha1.New()
-		if _, err := hash.Write(file); err != nil {
-			panic(err)
-		}
-		hashSum := hash.Sum(nil)
-		hashString := fmt.Sprintf("%x", hashSum)
-		if hashEntry, ok := hashes[hashString]; ok {
-			duplicates[hashEntry] = fullpath
-			atomic.AddInt64(dupeSize, entry.Size())
-		} else {
-			hashes[hashString] = fullpath
-		}
-	}
-}
 
 func sizeConversion(sizeInBytes int64, conversionSize int64) float64 {
 	return float64(sizeInBytes) / float64(conversionSize)
 }
 
 func toFloatString(number float64) string {
-	return strconv.FormatFloat(number, 'f', 2, 2)
+	return strconv.FormatFloat(number, 'f', 2, 64)
 }
 
 func toReadableSize(sizeInBytes int64) string {
@@ -89,22 +51,18 @@ func main() {
 		}
 	}
 
-	hashes := map[string]string{}
-	duplicates := map[string]string{}
-	var dupeSize int64
+	d := directoryOptions.NewDuplicates()
 
-	entries, err := ioutil.ReadDir(*dir)
+	err = d.TraverseDir(*dir)
 	if err != nil {
 		panic(err)
 	}
 
-	traverseDir(hashes, duplicates, &dupeSize, entries, *dir)
-
 	fmt.Println("DUPLICATES")
 
-	fmt.Println("TOTAL FILES:", len(hashes))
-	fmt.Println("DUPLICATES:", len(duplicates))
-	fmt.Println("TOTAL DUPLICATE SIZE:", toReadableSize(dupeSize))
+	fmt.Println("TOTAL FILES:", len(d.Hashes))
+	fmt.Println("DUPLICATES:", len(d.DuplicateSlice))
+	fmt.Println("TOTAL DUPLICATE SIZE:", toReadableSize(d.DupeSize))
 }
 
 // running into problems of not being able to open directories inside .app folders
