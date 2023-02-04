@@ -56,24 +56,25 @@ func toFloatString(number float64) string {
 }
 
 func toReadableSize(sizeInBytes int64) string {
-	if sizeInBytes > constants.OneTeraByte {
+	switch {
+	case sizeInBytes > constants.OneTeraByte:
 		sizeInTB := sizeConversion(sizeInBytes, constants.OneTeraByte)
 		return toFloatString(sizeInTB) + " TB"
-	}
-	if sizeInBytes > constants.OneGigaByte {
+
+	case sizeInBytes > constants.OneGigaByte:
 		sizeInTB := sizeConversion(sizeInBytes, constants.OneGigaByte)
 		return toFloatString(sizeInTB) + " GB"
-	}
-	if sizeInBytes > constants.OneMegaByte {
+
+	case sizeInBytes > constants.OneMegaByte:
 		sizeInTB := sizeConversion(sizeInBytes, constants.OneMegaByte)
 		return toFloatString(sizeInTB) + " MB"
-	}
 
-	if sizeInBytes > constants.OneKiloByte {
+	case sizeInBytes > constants.OneKiloByte:
 		sizeInTB := sizeConversion(sizeInBytes, constants.OneKiloByte)
 		return toFloatString(sizeInTB) + " KB"
+	default:
+		return toFloatString(float64(sizeInBytes)) + " B"
 	}
-	return toFloatString(float64(sizeInBytes)) + " B"
 }
 
 func main() {
