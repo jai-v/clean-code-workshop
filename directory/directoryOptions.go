@@ -3,7 +3,6 @@ package directoryOptions
 import (
 	"crypto/sha1"
 	"fmt"
-	"io/fs"
 	"io/ioutil"
 	"path"
 )
@@ -32,34 +31,40 @@ func (d *Duplicates) TraverseDir(directory string) error {
 		if !entry.Mode().IsDir() && !entry.Mode().IsRegular() {
 			continue
 		}
-
 		if entry.IsDir() {
 			d.TraverseDir(fullpath)
 			continue
 		}
-		file, err := ioutil.ReadFile(fullpath)
+		err = d.checkHash(fullpath, entry.Size())
 		if err != nil {
 			return err
 		}
-		err = d.hashFile(file, fullpath, entry)
-		if err != nil {
-			return err
-		}
-
 	}
 	return nil
 }
 
-func (d *Duplicates) hashFile(file []byte, fullpath string, entry fs.FileInfo) error {
+func getHash(fullpath string) (string, error) {
+	file, err := ioutil.ReadFile(fullpath)
+	if err != nil {
+		return "", err
+	}
 	hash := sha1.New()
 	if _, err := hash.Write(file); err != nil {
-		return err
+		return "", err
 	}
 	hashSum := hash.Sum(nil)
 	hashString := fmt.Sprintf("%x", hashSum)
+	return hashString, nil
+}
+
+func (d *Duplicates) checkHash(fullpath string, fileSize int64) error {
+	hashString, err := getHash(fullpath)
+	if err != nil {
+		return err
+	}
 	if hashEntry, ok := d.Hashes[hashString]; ok {
 		d.DuplicateSlice[hashEntry] = fullpath
-		d.DupeSize += entry.Size()
+		d.DupeSize += fileSize
 	} else {
 		d.Hashes[hashString] = fullpath
 	}

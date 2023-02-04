@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
-	"io/ioutil"
+	directoryOptions "clean-code-workshop/directory"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Approach-3 with go testing library with multiple multiple tests scenerios and name for each scenerio(Table Driven Test)
@@ -13,11 +14,11 @@ func TestToReadableSizeMultipleApproachTwo(t *testing.T) {
 		input    int64
 		expected string
 	}{
-		{"byte_return", 125, "125 B"},
-		{"kilobyte_return", 1010, "1 KB"},
-		{"megabyte_return", 1988909, "1 MB"},
-		{"gigabyte_return", 29121988909, "29 GB"},
-		{"gigabyte_return", 890929121988909, "890 TB"},
+		{"byte_return", 125, "125.00 B"},
+		{"kilobyte_return", 1045, "1.02 KB"},
+		{"megabyte_return", 1988909, "1.90 MB"},
+		{"gigabyte_return", 29121988909, "27.12 GB"},
+		{"gigabyte_return", 890929121988909, "810.30 TB"},
 	}
 
 	for _, tc := range tt {
@@ -31,15 +32,13 @@ func TestToReadableSizeMultipleApproachTwo(t *testing.T) {
 }
 
 func TestTraverseDir(t *testing.T) {
-	hashes := map[string]string{}
-	duplicates := map[string]string{}
-	var dupeSize int64
+	d := directoryOptions.NewDuplicates()
 	directory := "./duplicates_files_directory"
-	entries, _ := ioutil.ReadDir(directory)
-	traverseDir(hashes, duplicates, &dupeSize, entries, directory)
+	d.TraverseDir(directory)
 	expectedHashes := map[string]string{
 		"2dc2a49f5873c9fe21e3ce737a7da25a0c600ac8": "duplicates_files_directory/one copy.txt",
 		"907a9be60387970483664a0237a9eb0e9b9590a5": "duplicates_files_directory/two copy.txt",
+		"da39a3ee5e6b4b0d3255bfef95601890afd80709": "duplicates_files_directory/subdirectory/testfile",
 	}
 	lenExpectedHashes := len(expectedHashes)
 	expectedDuplicates := map[string]string{
@@ -48,15 +47,15 @@ func TestTraverseDir(t *testing.T) {
 	}
 	lenExpectedDuplicates := len(expectedDuplicates)
 
-	if lenExpectedHashes != len(hashes) {
-		t.Errorf("got %v, wanted %v", len(hashes), lenExpectedHashes)
+	if lenExpectedHashes != len(d.Hashes) {
+		t.Errorf("got %v, wanted %v", len(d.Hashes), lenExpectedHashes)
 	}
 
-	if lenExpectedDuplicates != len(duplicates) {
-		t.Errorf("got %v, wanted %v", len(duplicates), lenExpectedDuplicates)
+	if lenExpectedDuplicates != len(d.DuplicateSlice) {
+		t.Errorf("got %v, wanted %v", len(d.DuplicateSlice), lenExpectedDuplicates)
 	}
 
-	assert.Equal(t, expectedHashes, hashes)
-	assert.Equal(t, expectedDuplicates, duplicates)
+	assert.Equal(t, expectedHashes, d.Hashes)
+	assert.Equal(t, expectedDuplicates, d.DuplicateSlice)
 
 }
