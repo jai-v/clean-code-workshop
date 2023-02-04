@@ -1,6 +1,7 @@
 package main
 
 import (
+	"clean-code-workshop/constants"
 	"crypto/sha1"
 	"flag"
 	"fmt"
@@ -46,20 +47,33 @@ func traverseDir(hashes, duplicates map[string]string, dupeSize *int64, entries 
 	}
 }
 
-func toReadableSize(nbytes int64) string {
-	if nbytes > 1000*1000*1000*1000 {
-		return strconv.FormatInt(nbytes/(1000*1000*1000*1000), 10) + " TB"
+func sizeConversion(sizeInBytes int64, conversionSize int64) float64 {
+	return float64(sizeInBytes) / float64(conversionSize)
+}
+
+func toFloatString(number float64) string {
+	return strconv.FormatFloat(number, 'f', 2, 2)
+}
+
+func toReadableSize(sizeInBytes int64) string {
+	if sizeInBytes > constants.OneTeraByte {
+		sizeInTB := sizeConversion(sizeInBytes, constants.OneTeraByte)
+		return toFloatString(sizeInTB) + " TB"
 	}
-	if nbytes > 1000*1000*1000 {
-		return strconv.FormatInt(nbytes/(1000*1000*1000), 10) + " GB"
+	if sizeInBytes > constants.OneGigaByte {
+		sizeInTB := sizeConversion(sizeInBytes, constants.OneGigaByte)
+		return toFloatString(sizeInTB) + " GB"
 	}
-	if nbytes > 1000*1000 {
-		return strconv.FormatInt(nbytes/(1000*1000), 10) + " MB"
+	if sizeInBytes > constants.OneMegaByte {
+		sizeInTB := sizeConversion(sizeInBytes, constants.OneMegaByte)
+		return toFloatString(sizeInTB) + " MB"
 	}
-	if nbytes > 1000 {
-		return strconv.FormatInt(nbytes/1000, 10) + " KB"
+
+	if sizeInBytes > constants.OneKiloByte {
+		sizeInTB := sizeConversion(sizeInBytes, constants.OneKiloByte)
+		return toFloatString(sizeInTB) + " KB"
 	}
-	return strconv.FormatInt(nbytes, 10) + " B"
+	return toFloatString(float64(sizeInBytes)) + " B"
 }
 
 func main() {

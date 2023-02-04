@@ -1,45 +1,10 @@
 package main
 
 import (
+	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"testing"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
-	. "github.com/onsi/gomega"
 )
-
-// Approach-1 with go testing library
-func TestToReadableSize(t *testing.T) {
-
-	got := toReadableSize(4000)
-	want := "4 KB"
-
-	if got != want {
-		t.Errorf("got %q, wanted %q", got, want)
-	}
-}
-
-// Approach-2 with go testing library with multiple multiple tests scenerios(Table Driven Test)
-type toReadableSizeTest struct {
-	nbytes   int
-	expected string
-}
-
-var toReadableSizeTests = []toReadableSizeTest{
-	{1000, "1000 B"},
-	{1000 * 1000, "1000 KB"},
-	{1000 * 1000 * 1000, "1000 MB"},
-	{1000 * 1000 * 1000 * 1000, "1000 GB"},
-}
-
-func TestToReadableSizeMultiple(t *testing.T) {
-
-	for _, test := range toReadableSizeTests {
-		if output := toReadableSize(int64(test.nbytes)); output != test.expected {
-			t.Errorf("Output %q not equal to expected %q", output, test.expected)
-		}
-	}
-}
 
 // Approach-3 with go testing library with multiple multiple tests scenerios and name for each scenerio(Table Driven Test)
 func TestToReadableSizeMultipleApproachTwo(t *testing.T) {
@@ -65,37 +30,33 @@ func TestToReadableSizeMultipleApproachTwo(t *testing.T) {
 	}
 }
 
-// Approach-4 with ginko ang gomega
-func TestToReadableSizeWithGinkoAndGomega(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "To readable size")
+func TestTraverseDir(t *testing.T) {
+	hashes := map[string]string{}
+	duplicates := map[string]string{}
+	var dupeSize int64
+	directory := "./duplicates_files_directory"
+	entries, _ := ioutil.ReadDir(directory)
+	traverseDir(hashes, duplicates, &dupeSize, entries, directory)
+	expectedHashes := map[string]string{
+		"2dc2a49f5873c9fe21e3ce737a7da25a0c600ac8": "duplicates_files_directory/one copy.txt",
+		"907a9be60387970483664a0237a9eb0e9b9590a5": "duplicates_files_directory/two copy.txt",
+	}
+	lenExpectedHashes := len(expectedHashes)
+	expectedDuplicates := map[string]string{
+		"duplicates_files_directory/one copy.txt": "duplicates_files_directory/one.txt",
+		"duplicates_files_directory/two copy.txt": "duplicates_files_directory/two.txt",
+	}
+	lenExpectedDuplicates := len(expectedDuplicates)
+
+	if lenExpectedHashes != len(hashes) {
+		t.Errorf("got %v, wanted %v", len(hashes), lenExpectedHashes)
+	}
+
+	if lenExpectedDuplicates != len(duplicates) {
+		t.Errorf("got %v, wanted %v", len(duplicates), lenExpectedDuplicates)
+	}
+
+	assert.Equal(t, expectedHashes, hashes)
+	assert.Equal(t, expectedDuplicates, duplicates)
+
 }
-
-var _ = Describe("Main", func() {
-	Context("To readable size", func() {
-		It("should return in bytes if nbytes is less than 1000", func() {
-			result := toReadableSize(125)
-			Expect(result).To(Equal("125 B"))
-		})
-
-		It("should return in kilo bytes if nbytes is less than MB", func() {
-			result := toReadableSize(10000)
-			Expect(result).To(Equal("10 KB"))
-		})
-	})
-})
-
-// Approach-5 with ginko ang gomega(Table Driven Test)
-var _ = Describe("Main", func() {
-	Context("To readable size", func() {
-
-		DescribeTable("To readable size", func(nbytes int64, expectedResult string) {
-			actualResult := toReadableSize(nbytes)
-			Expect(actualResult).To(Equal(expectedResult))
-		},
-			Entry("should return in bytes if nbytes is less than 1000", int64(125), "125 B"),
-			Entry("should return in kilo bytes if nbytes is less than MB", int64(10000), "10 KB"),
-		)
-	})
-
-})
